@@ -1,0 +1,1 @@
+pyinstaller --onefile .\ShaderString\run.py
