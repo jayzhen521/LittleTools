@@ -20,12 +20,18 @@ class ImageCutMerge(Cmd):
     def do_cut(self, argv):
         parameters = argv.split(' ')
         
-        if parameters and parameters[0] != "exit" and len(parameters) >= 1:
+        if parameters and parameters[0] != "exit" and len(parameters) >= 3:
+            w = parameters[1]
+            h = parameters[2]
+
             image = cv2.imread(parameters[0])
 
             height, width, _ = np.shape(image)
 
-            w, h = 4, 4
+            imageBlock = {}
+
+            imageBlock["width"] = width
+            imageBlock["height"] = height
 
             deltaWidth = width // w
             deltaHeight = height // h
@@ -53,10 +59,12 @@ class ImageCutMerge(Cmd):
 
                     rowList.append('{}-{}.png'.format(y, x))
 
-                    imageRowList.append(rowList)
+                imageRowList.append(rowList)
+
+            imageBlock["imageBlock"] = imageRowList
 
             with open(fileFolder + "/imageData.txt", "wt") as f:
-                f.write(json.dumps(imageRowList))
+                f.write(json.dumps(imageBlock))
 
     def do_merge(self, argv):
         
@@ -64,22 +72,38 @@ class ImageCutMerge(Cmd):
         
         if parameters and parameters[0] != "exit" and len(parameters) >= 1:
             imageRowList = None
+            targetImage = None
             with open(parameters[0] + "/imageData.txt", "rt") as f:
-                imageRowList = json.loads(f.read())
+                imageData = json.loads(f.read())
+                imageRowList = imageData["imageBlock"]
+                imageWidth = imageData["width"]
+                imageHeight = imageData["height"]
 
-                
-            print(type(imageRowList))
+                targetImage = np.zeros((imageHeight,imageWidth,3), np.uint8)
 
-            entireImage 
+            print((imageHeight, imageWidth))
 
-            count = 0
-            while count < len(imageRowList) - 1:
-                for image in imageRow:
-                    img = imread(parameters[0] + "/" + image)
-                    
-                    
-                    
-                
+            offsetHeight = 0
+            offsetWidth = 0
+
+            for column in imageRowList:
+                deltaOffsetHeight = 0
+                print((offsetHeight, offsetWidth))
+                for row in column:
+                    imagePath = parameters[0] + "/" + row
+                    print(imagePath)
+                    aImageBlock = cv2.imread(imagePath)
+                    targetImage[offsetHeight:(offsetHeight + aImageBlock.shape[0]), offsetWidth:(offsetWidth + aImageBlock.shape[1])] = aImageBlock
+                    cv2.imshow("image", aImageBlock)
+                    offsetWidth += aImageBlock.shape[1]
+                    deltaOffsetHeight = aImageBlock.shape[0]
+                offsetWidth = 0
+                offsetHeight += deltaOffsetHeight
+
+            cv2.imshow("image", targetImage)
+            cv2.imwrite(parameters[0] + ".png", targetImage)
+            cv2.waitKey()
+           
 
 
     def do_exit(self, arg):
